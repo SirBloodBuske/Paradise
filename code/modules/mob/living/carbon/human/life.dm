@@ -108,6 +108,9 @@ var/global/list/brutefireloss_overlays = list("1" = image("icon" = 'icons/mob/sc
 		//Check if we're on fire
 		handle_fire()
 
+		//Decrease wetness over time
+		handle_wetness()
+
 		//stuff in the stomach
 		handle_stomach()
 
@@ -135,6 +138,9 @@ var/global/list/brutefireloss_overlays = list("1" = image("icon" = 'icons/mob/sc
 
 	//Status updates, death etc.
 	handle_regular_status_updates()		//Optimized a bit
+
+	handle_actions()
+
 	update_canmove()
 
 	//Update our name based on whether our face is obscured/disfigured
@@ -547,6 +553,10 @@ var/global/list/brutefireloss_overlays = list("1" = image("icon" = 'icons/mob/sc
 		return
 	//END FIRE CODE
 
+	proc/handle_wetness()
+		if(mob_master.current_cycle%20==2) //dry off a bit once every 20 ticks or so
+			wetlevel = max(wetlevel - 1,0)
+		return
 
 	/*
 	proc/adjust_body_temperature(current, loc_temp, boost)
@@ -734,10 +744,11 @@ var/global/list/brutefireloss_overlays = list("1" = image("icon" = 'icons/mob/sc
 			var/light_amount = 0 //how much light there is in the place, affects receiving nutrition and healing
 			if(isturf(loc)) //else, there's considered to be no light
 				var/turf/T = loc
-				var/area/A = T.loc
-				if(A)
-					if(A.lighting_use_dynamic)	light_amount = min(10,T.lighting_lumcount) - 5 //hardcapped so it's not abused by having a ton of flashlights
-					else						light_amount =  5
+				var/atom/movable/lighting_overlay/L = locate(/atom/movable/lighting_overlay) in T
+				if(L)
+					light_amount = min(10,L.lum_r + L.lum_g + L.lum_b) - 5 //hardcapped so it's not abused by having a ton of flashlights
+				else
+					light_amount =  5
 			nutrition += light_amount
 			traumatic_shock -= light_amount
 
@@ -755,10 +766,11 @@ var/global/list/brutefireloss_overlays = list("1" = image("icon" = 'icons/mob/sc
 			var/light_amount = 0
 			if(isturf(loc))
 				var/turf/T = loc
-				var/area/A = T.loc
-				if(A)
-					if(A.lighting_use_dynamic)	light_amount = T.lighting_lumcount
-					else						light_amount =  10
+				var/atom/movable/lighting_overlay/L = locate(/atom/movable/lighting_overlay) in T
+				if(L)
+					light_amount = L.lum_r + L.lum_g + L.lum_b //hardcapped so it's not abused by having a ton of flashlights
+				else
+					light_amount =  10
 			if(light_amount > species.light_dam) //if there's enough light, start dying
 				if(species.light_effect_amp)
 					adjustFireLoss(5) //This gets doubled by Shadowling's innate fire weakness, so it ends up being 10.
@@ -1037,19 +1049,18 @@ var/global/list/brutefireloss_overlays = list("1" = image("icon" = 'icons/mob/sc
 		if(hud_updateflag)
 			handle_hud_list()
 
-
 		if(!client)	return 0
 
 		if(hud_updateflag)
 			handle_hud_list()
+
+		update_action_buttons()
 
 		for(var/image/hud in client.images)
 			if(copytext(hud.icon_state,1,4) == "hud") //ugly, but icon comparison is worse, I believe
 				client.images.Remove(hud)
 
 		client.screen.Remove(global_hud.blurry, global_hud.druggy, global_hud.vimpaired, global_hud.darkMask,/* global_hud.nvg*/)
-
-		update_action_buttons()
 
 		if(damageoverlay.overlays)
 			damageoverlay.overlays = list()
@@ -1349,7 +1360,8 @@ var/global/list/brutefireloss_overlays = list("1" = image("icon" = 'icons/mob/sc
 		//0.1% chance of playing a scary sound to someone who's in complete darkness
 		if(isturf(loc) && rand(1,1000) == 1)
 			var/turf/currentTurf = loc
-			if(!currentTurf.lighting_lumcount)
+			var/atom/movable/lighting_overlay/L = locate(/atom/movable/lighting_overlay) in currentTurf
+			if(L && L.lum_r + L.lum_g + L.lum_b == 0)
 				playsound_local(src,pick(scarySounds),50, 1, -1)
 
 	// Separate proc so we can jump out of it when we've succeeded in spreading disease.
@@ -1789,7 +1801,6 @@ var/global/list/brutefireloss_overlays = list("1" = image("icon" = 'icons/mob/sc
 					holder.icon_state = "hudscientopia"
 
 			hud_list[NATIONS_HUD] = holder
-	update_power_buttons()
 	hud_updateflag = 0
 
 /mob/living/carbon/human/proc/process_nations()
@@ -1808,9 +1819,6 @@ var/global/list/brutefireloss_overlays = list("1" = image("icon" = 'icons/mob/sc
 	return slurring
 
 /mob/living/carbon/human/handle_stunned()
-	if(species.flags & NO_PAIN)
-		stunned = 0
-		return 0
 	if(..())
 		speech_problem_flag = 1
 	return stunned

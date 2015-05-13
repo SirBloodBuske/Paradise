@@ -453,13 +453,7 @@ var/MAX_EX_FLASH_RANGE = 14
 #define GAS_CO2	(1 << 3)
 #define GAS_N2O	(1 << 4)
 
-#define MAX_Z	7 // Used in space.dm to defince which Z-levels cannot be exited via space.
-var/list/accessable_z_levels = list("1" = 5, "3" = 10, "4" = 15, "5" = 10, "6" = 60)
-//This list contains the z-level numbers which can be accessed via space travel and the percentile chances to get there.
-//(Exceptions: extended, sandbox and nuke) -Errorage
-//Was list("3" = 30, "4" = 70).
-//Spacing should be a reliable method of getting rid of a body -- Urist.
-//Go away Urist, I'm restoring this to the longer list. ~Errorage
+#define MAX_Z	8 // Used in space.dm to defince which Z-levels cannot be exited via space.
 
 #define IS_MODE_COMPILED(MODE) (ispath(text2path("/datum/game_mode/"+(MODE))))
 
@@ -795,7 +789,7 @@ var/list/be_special_flags = list(
 #define PULSE_THREADY	5	//occurs during hypovolemic shock
 //feel free to add shit to lists below
 var/list/tachycardics = list("coffee", "methamphetamine", "nitroglycerin", "thirteenloko", "nicotine")	//increase heart rate
-var/list/bradycardics = list("neurotoxin", "cryoxadone", "clonexadone", "space_drugs")					//decrease heart rate
+var/list/bradycardics = list("neurotoxin", "cryoxadone", "space_drugs")					//decrease heart rate
 var/list/heartstopper = list("capulettium", "capulettium_plus") //this stops the heart
 var/list/cheartstopper = list() //this stops the heart when overdose is met -- c = conditional
 
@@ -817,7 +811,6 @@ var/list/restricted_camera_networks = list( //Those networks can only be accesse
 
 #define NO_BLOOD		1
 #define NO_BREATHE 		2
-#define IS_SLOW 		4
 #define RAD_ABSORB		8
 #define NO_SCAN 		16
 #define NO_PAIN 		32
@@ -964,6 +957,8 @@ var/list/hit_appends = list("-OOF", "-ACK", "-UGH", "-HRNK", "-HURGH", "-GLORF")
 #define STATUS_DISABLED 0 // RED Visability
 #define STATUS_CLOSE -1 // Close the interface
 
+#define HYDRO_SPEED_MULTIPLIER 1
+
 #define NANO_IGNORE_DISTANCE 1
 
 //Click cooldowns, in tenths of a second
@@ -974,3 +969,5 @@ var/list/hit_appends = list("-OOF", "-ACK", "-UGH", "-HRNK", "-HURGH", "-GLORF")
 #define CLICK_CD_TKSTRANGLE 10
 #define CLICK_CD_POINT 10
 #define CLICK_CD_RESIST 20
+
+#define CLAMP01(x) max(0, min(1, x))
